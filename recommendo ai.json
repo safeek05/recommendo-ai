@@ -1,0 +1,250 @@
+{
+  "name": "recommendo ai",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "content recommendation",
+        "formDescription": "fill out the form ",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "enter your name ",
+              "placeholder": "your name ",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "enter your email ",
+              "fieldType": "email",
+              "placeholder": "your email ",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "select your category ",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "movie "
+                  },
+                  {
+                    "option": "book"
+                  },
+                  {
+                    "option": "song "
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "enter your current mood ",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "happy "
+                  },
+                  {
+                    "option": "sad "
+                  },
+                  {
+                    "option": "chill"
+                  },
+                  {
+                    "option": "motivated "
+                  },
+                  {
+                    "option": "romantic "
+                  },
+                  {
+                    "option": "energetic "
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "choose a genre ",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Romance"
+                  },
+                  {
+                    "option": "thriller "
+                  },
+                  {
+                    "option": "comedy "
+                  },
+                  {
+                    "option": "horror "
+                  },
+                  {
+                    "option": "pop"
+                  },
+                  {
+                    "option": "classical "
+                  },
+                  {
+                    "option": "sci-fi "
+                  },
+                  {
+                    "option": "mystery "
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "enter your preferred language ",
+              "placeholder": "your preferred language ",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "518ee2e8-2371-4d08-b73b-a4a4b2e71e2a",
+      "name": "On form submission",
+      "webhookId": "ba45822f-2a12-4425-ae7f-d2ac5df1eb77"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a recommendation assistant. Based on the user's mood, category, genre, and language, recommend a new item that has not been suggested in recent history.\n\nThe user feels {{ $json['enter your current mood '] }} and selected the category {{ $json['select your category '] }}. The genre is {{ $json['choose a genre '] }}, and the language is {{ $json['enter your preferred language '] }}.\n\nHere are past suggestions: {{ $json['enter your email '] }}\n\nNow suggest a new recommendation (movie, song, or book) that fits the above and provide a link to:\n- Watch (if movie): Prefer Netflix or Prime \n- Listen (if music): Prefer Spotify \n- Buy (if book): Prefer Amazon or Flipkart\n\nFormat:\nTitle- [Platform]  \nWhy: (1 sentence summary)\nLink: (direct link)\n\nmake it sound professional ",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        240,
+        20
+      ],
+      "id": "0b8d1d0d-611b-413c-b8bc-79a770971a7a",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        260,
+        240
+      ],
+      "id": "60f56555-43fc-4a2b-a173-31091054cc6c",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "jEDehBfBYZiyHTh6",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json['enter your email '] }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        420,
+        240
+      ],
+      "id": "8b6edca1-31b4-46b4-9557-25c9c239d5cc",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('On form submission').item.json['enter your email '] }}",
+        "subject": "=your personalized  {{ $('On form submission').item.json['select your category '] }}",
+        "emailType": "text",
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        600,
+        20
+      ],
+      "id": "0951d417-18f8-4ae4-a9fe-140ea4a35969",
+      "name": "Send a message",
+      "webhookId": "6b51bf24-d0b6-4548-8d57-b9d6bdcb6244",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "DtKqOYHydxsCUjQu",
+          "name": "Gmail account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2a4170dd-7274-4412-ab30-91e3e549a02d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "25f41d446846d22b4a488bc59060e6fe0db93ce0f519aafee0bc0863f054422e"
+  },
+  "id": "Hy3PZuP3MUkMitbZ",
+  "tags": []
+}
